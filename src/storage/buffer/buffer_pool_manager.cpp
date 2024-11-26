@@ -42,9 +42,46 @@ BufferPoolManager::BufferPoolManager(DiskManager *disk_manager, wsdb::LogManager
   }
 }
 
-auto BufferPoolManager::FetchPage(file_id_t fid, page_id_t pid) -> Page * { WSDB_STUDENT_TODO(l1, t2); }
+auto BufferPoolManager::FetchPage(file_id_t fid, page_id_t pid) -> Page *
+{
+  // WSDB_STUDENT_TODO(l1, t2);
+  std::lock_guard<std::mutex> lock(latch_);
 
-auto BufferPoolManager::UnpinPage(file_id_t fid, page_id_t pid, bool is_dirty) -> bool { WSDB_STUDENT_TODO(l1, t2); }
+  wsdb::fid_pid_t fp{fid, pid};
+  frame_id_t      frame_id;
+  if (page_frame_lookup_.contains(fp)) {
+    frame_id = page_frame_lookup_[fp];
+    replacer_->Pin(frame_id);
+    frames_[frame_id].Pin();
+  } else {
+    frame_id = GetAvailableFrame();
+    UpdateFrame(frame_id, fid, pid);
+  }
+  return frames_[frame_id].GetPage();
+}
+
+auto BufferPoolManager::UnpinPage(file_id_t fid, page_id_t pid, bool is_dirty) -> bool
+{
+  // WSDB_STUDENT_TODO(l1, t2);
+  std::lock_guard<std::mutex> lock(latch_);
+
+  wsdb::fid_pid_t fp{fid, pid};
+  if (page_frame_lookup_.contains(fp)) {
+    frame_id_t frame_id = page_frame_lookup_[fp];
+    Frame     &frame    = frames_[frame_id];
+    if (frame.InUse()) {
+      frame.Unpin();
+      if (!frame.InUse()) {
+        replacer_->Unpin(frame_id);
+      }
+      if (!frame.IsDirty()) {
+        frame.SetDirty(is_dirty);
+      }
+      return true;
+    }
+  }
+  return false;
+}
 
 auto BufferPoolManager::DeletePage(file_id_t fid, page_id_t pid) -> bool { WSDB_STUDENT_TODO(l1, t2); }
 
