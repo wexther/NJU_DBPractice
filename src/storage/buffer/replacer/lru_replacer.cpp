@@ -77,12 +77,12 @@ void LRUReplacer::Pin(frame_id_t frame_id)
     // }
   } else {
     // 页面在缓存
-    WSDB_ASSERT(frame_hash_it->second->second, "Pin已被Pin过的页面");
-    // 由FAQ，认为此时页面未被Pin，若需处理其余情况，解以下注释
-    // if (frame_hash_it->second->second) {
+    // WSDB_ASSERT(frame_hash_it->second->second, "Pin已被Pin过的页面");
+    // // 由FAQ，认为此时页面未被Pin，若需处理其余情况，解以下注释
+    if (frame_hash_it->second->second) {
     --cur_size_;
     frame_hash_it->second->second = false;
-    // }
+    }
     lru_list_.splice(lru_list_.begin(), lru_list_, frame_hash_it->second);
   }
 }
@@ -96,12 +96,12 @@ void LRUReplacer::Unpin(frame_id_t frame_id)
   WSDB_ASSERT(frame_hash_it != lru_hash_.end(), "Unpin未缓存的页面");
   // 由FAQ，认为此时页面已缓存，若需处理其余情况，解以下注释
   // if (frame_hash_it != lru_hash_.end()) {
-  WSDB_ASSERT(!frame_hash_it->second->second, "Unpin未被Pin过的页面");
-  // 由FAQ，认为此时页面已被Pin，若需处理其余情况，解以下注释
-  // if (!frame_hash_it->second->second) {
-  frame_hash_it->second->second = true;
-  ++cur_size_;
-  // }
+  // WSDB_ASSERT(!frame_hash_it->second->second, "Unpin未被Pin过的页面");
+  // // 由FAQ，认为此时页面已被Pin，若需处理其余情况，解以下注释
+  if (!frame_hash_it->second->second) {
+    frame_hash_it->second->second = true;
+    ++cur_size_;
+  }
   // }
 }
 
