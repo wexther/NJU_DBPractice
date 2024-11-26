@@ -300,7 +300,7 @@ PAX Page Handle支持整列的读取（ReadChunk），给定一个记录模式�
 
 *提交示例：请将以上两部分内容打包并命名为lab1\_学号\_姓名.zip（例如lab1_123456_张三.zip）并上传至提交平台，请确保解压后目录树如下：*
 
-```bash
+```shell
 ├── lab1_123456_张三.pdf
 └── src
     ├── CMakeLists.txt

@@ -88,7 +88,7 @@ private:
   // number of evictable frames
   size_t cur_size_;
   // maximum number of frames
-  size_t max_size_;
+  size_t const max_size_;//将max_size声明为const
 };
 
 }  // namespace wsdb
