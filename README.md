@@ -29,7 +29,7 @@ or pulling requests.
 First clone the repository from github.
 
 ```shell
-$ git clone --recursive https://github.com/nju-websoft/NJU_DBPractice
+git clone --recursive https://github.com/nju-websoft/NJU_DBPractice
 ```
 
 Install requirments using package manager.
@@ -37,23 +37,23 @@ Install requirments using package manager.
 For Ubuntu or Debian:
 
 ```shell
-$ sudo apt install gcc g++ cmake flex bison libreadline-dev
+sudo apt install gcc g++ cmake flex bison libreadline-dev
 ```
 
 For MacOS:
 
 ```shell
-$ sudo brew install clang cmake flex bison readline
+sudo brew install clang cmake flex bison readline
 ```
 
 Then change directory into the repository foot and run
 
 ```shell
-$ mkdir build && cd build
+mkdir build && cd build
 ```
 
 ```shell
-$ cmake .. && make -j8
+cmake .. && make -j8
 ```
 
 About how to change cmake configurations, please refer to their guide.
@@ -65,7 +65,7 @@ studying NJU DB course.
 
 ## Copyright
 
-```
+```text
 /*------------------------------------------------------------------------------
  - Copyright (c) 2024. Websoft research group, Nanjing University.
  -
@@ -83,4 +83,3 @@ studying NJU DB course.
  - along with this program.  If not, see <https://www.gnu.org/licenses/>.
  -----------------------------------------------------------------------------*/
 ```
-

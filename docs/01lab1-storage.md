@@ -18,26 +18,26 @@
 
 ## 句柄
 
-#### 页面句柄
+### 页面句柄
 
 页面句柄（PageHandle）负责将页面中的序列化数据反序列化出来，并负责元组的插入删除和读取。页面由页头和槽数据组成，页头位于页面的开头固定字节的内存段，分别为：1、当前页面上最后一个写回硬盘的日志序列号；2、下一个拥有空闲槽位的页面ID；3、当前页面上的记录个数。
 
 下图展示了行存模式下（NAry PageHandle）的页面组织格式：
 
-```
+```text
 |<-------------------- Page Header ------------------->|<------------------slot memory---------------->|
 | page last LSN | next_free_page_id | number of record | bitmap | record 1 | record 2 | ... | record n |
 ```
 
 紧跟页头的是槽数据，不同数据库对槽数据的排布方式不同，但总体上可以分为两部分：指示槽位是否空闲的Bitmap，以及元组的实际数据信息。Bitmap用于指示某个槽位的内存空间是否空闲，例如，如果需要在slot_id =8的位置插入一个元组，页面句柄会首先检查第8位是否已经有记录，如果已有记录会抛出记录已存在的异常，如果没有会首先将Bitmap的第8位置为1，然后将数据写入槽位。
 
-#### 记录句柄
+### 记录句柄
 
 WSDB采用**定长数据**的组织形式，即在表创建时一条记录的长度就已经确定。定长记录的好处是一条记录的起始位置通过简单的偏移量计算就能获得，并且在插入删除时不会产生碎片化内存（*想想看为什么*），从而不需要额外线程清理碎片化空间。
 
 对于变长记录，一条记录由记录头信息和记录数据组成。
 
-```
+```text
 | slot id | prev_rec_off | next_rec_off | record_lenth | nullmap | record data |
 ```
 
@@ -45,18 +45,18 @@ WSDB采用**定长数据**的组织形式，即在表创建时一条记录的长
 
 WSDB中一条记录也有记录头信息，但由于采取定长记录组织形式，因此上图的字段中只保留了`nullmap`字段。
 
-##### 表句柄
+#### 表句柄
 
 表句柄（Table Handle）通过封装页面句柄从而向上层提供针对记录的增删改查接口以及对整个表的遍历操作。
 
 表头（Table Header）是表的第一页，存储了表的元信息，在表句柄中Table Header格式如下：
 
-```
+```text
 |<------------------------------------------------- Table Header ------------------------------------------------>|
 | page_num_ | first_free_page_ | rec_num_ | rec_size_ | rec_per_page_ | field_num_ | bitmap_size_ | nullmap_size_ |
 ```
 
-其中，`page_num_ `表示表中页面的数量，`first_free_page_ `记录了表中第一个空闲页面的页面号，`rec_num_`,`rec_size_`,`rec_per_page_`分别表示表中记录的数量，一条记录的大小和每页能存储的记录数量，`field_num_`表示表中的属性数，`bitmap_size_`,`nullmap_size_`分别表示页面句柄中`bitmap`的大小和记录句柄中`nullmap`的大小。
+其中，`page_num_`表示表中页面的数量，`first_free_page_`记录了表中第一个空闲页面的页面号，`rec_num_`,`rec_size_`,`rec_per_page_`分别表示表中记录的数量，一条记录的大小和每页能存储的记录数量，`field_num_`表示表中的属性数，`bitmap_size_`,`nullmap_size_`分别表示页面句柄中`bitmap`的大小和记录句柄中`nullmap`的大小。
 
 ## 实验要求
 
@@ -101,29 +101,29 @@ virtual auto Size() -> size_t = 0;
 
 `LRUReplacer`类中定义的成员变量如下：
 
-- `std::mutex latch_` 用于并发控制。
+* `std::mutex latch_` 用于并发控制。
 
-- `std::list<std::pair<frame_id_t, bool>> lru_list_` 存储帧的id以及记录该帧是否可被淘汰的标志位。
+* `std::list<std::pair<frame_id_t, bool>> lru_list_` 存储帧的id以及记录该帧是否可被淘汰的标志位。
 
-- `std::unordered_map<frame_id_t, std::list<std::pair<frame_id_t, bool>>::iterator> lru_hash_` 维护所有帧id到`lru_list_`上的迭代器的映射。
+* `std::unordered_map<frame_id_t, std::list<std::pair<frame_id_t, bool>>::iterator> lru_hash_` 维护所有帧id到`lru_list_`上的迭代器的映射。
 
-- `size_t cur_size_` 表示当前**可被淘汰**的帧的数量。
+* `size_t cur_size_` 表示当前**可被淘汰**的帧的数量。
 
-- `size_t max_size_` 表示帧的最大数量。
+* `size_t max_size_` 表示帧的最大数量。
 
 下面是你需要完成的函数，位于文件`storage/buffer/replacer/lru_replacer.cpp`中：
 
-- `auto LRUReplacer::Victim(frame_id_t *frame_id) -> bool;`
+* `auto LRUReplacer::Victim(frame_id_t *frame_id) -> bool;`
   根据LRU策略淘汰缓冲池中一个帧中的页面并传回`frame_id`，如果成功淘汰了一个页面返回`true`，否则返回`false`。
 
-- `void LRUReplacer::Pin(frame_id_t frame_id);`
+* `void LRUReplacer::Pin(frame_id_t frame_id);`
   固定id为`frame_id`的帧，如果该帧不在`lru_list_`中，应先将其加入。
   **注意**：固定id为`frame_id`的帧应该被视作对此页面进行访问，因此调用`Pin`函数后该页面即为最近访问的页面。
 
-- `void LRUReplacer::Unpin(frame_id_t frame_id);`
+* `void LRUReplacer::Unpin(frame_id_t frame_id);`
   取消固定id为`frame_id`的帧。
 
-- `auto LRUReplacer::Size() -> size_t;`，返回可以被淘汰的帧数量。
+* `auto LRUReplacer::Size() -> size_t;`，返回可以被淘汰的帧数量。
 
 下面列举一些例子，对期望你实现的LRU策略进行说明：
 
@@ -139,19 +139,19 @@ virtual auto Size() -> size_t = 0;
 
 `BufferPoolManager`类中定义了以下类成员变量：
 
-- `std::mutex latch_` 用于并发控制。
+* `std::mutex latch_` 用于并发控制。
 
-- `DiskManager *disk_manager_` 磁盘管理器，提供磁盘和缓冲区之间的页面读写接口。
+* `DiskManager *disk_manager_` 磁盘管理器，提供磁盘和缓冲区之间的页面读写接口。
 
-- `LogManager *log_manager_` 日志管理器。
+* `LogManager *log_manager_` 日志管理器。
 
-- `std::unique_ptr<Replacer> replacer_` 页面替换策略，调用你在t1中实现的接口。
+* `std::unique_ptr<Replacer> replacer_` 页面替换策略，调用你在t1中实现的接口。
 
-- `std::array<Frame, BUFFER_POOL_SIZE> frames_` 用于存储缓冲区中的数据页面。
+* `std::array<Frame, BUFFER_POOL_SIZE> frames_` 用于存储缓冲区中的数据页面。
 
-- `std::list<frame_id_t> free_list_` 用于记录缓冲区中空闲数据页面的标识符。
+* `std::list<frame_id_t> free_list_` 用于记录缓冲区中空闲数据页面的标识符。
 
-- `std::unordered_map<fid_pid_t, frame_id_t> page_frame_lookup_` 维护磁盘页面标识符（file id和page id）到缓冲区中数据页面标识符（frame id）的映射。
+* `std::unordered_map<fid_pid_t, frame_id_t> page_frame_lookup_` 维护磁盘页面标识符（file id和page id）到缓冲区中数据页面标识符（frame id）的映射。
 
 下面是你需要完成的函数，位于文件`storage/buffer/buffer_pool_manager.cpp`中：
 
@@ -166,30 +166,31 @@ virtual auto Size() -> size_t = 0;
 
 * `auto BufferPoolManager::DeletePage(file_id_t fid, page_id_t pid) -> bool;`
   将页面从缓冲区中删除，注意需要将脏页写回磁盘。
-- `auto BufferPoolManager::DeleteAllPages(file_id_t fid) -> bool;`
+
+* `auto BufferPoolManager::DeleteAllPages(file_id_t fid) -> bool;`
   删除缓冲区中指定文件对应的所有页面。
 
-- `auto BufferPoolManager::FlushPage(file_id_t fid, page_id_t pid) -> bool;`
+* `auto BufferPoolManager::FlushPage(file_id_t fid, page_id_t pid) -> bool;`
   将缓冲区中的页面写到硬盘中。
 
-- `auto BufferPoolManager::FlushAllPages(file_id_t fid) -> bool;`
+* `auto BufferPoolManager::FlushAllPages(file_id_t fid) -> bool;`
   将缓冲区中指定文件的所有页面写回磁盘。
 
-- `auto BufferPoolManager::GetAvailableFrame() -> frame_id_t;`
+* `auto BufferPoolManager::GetAvailableFrame() -> frame_id_t;`
   获取一个缓冲区中的空闲数据页面。如果没有空闲页面，执行页面替换策略，替换失败需要抛出`WSDB_NO_FREE_FRAME`异常。
 
-- `void BufferPoolManager::UpdateFrame(frame_id_t frame_id, file_id_t fid, page_id_t pid);`
+* `void BufferPoolManager::UpdateFrame(frame_id_t frame_id, file_id_t fid, page_id_t pid);`
   更新缓冲区中指定的页面。
 
 更具体的实现步骤说明可以查看文件`storage/buffer/buffer_pool_manager.h`中的函数注释。
 
 在你开始实现以上函数前，**建议首先阅读以下文件内容**，其中包含你可能会用到的函数接口：
 
-- `storage/disk/disk_manager.h`
+* `storage/disk/disk_manager.h`
 
-- `storage/buffer/frame.h`
+* `storage/buffer/frame.h`
 
-- `common/page.h`
+* `common/page.h`
 
 ### t3. Table Handle (40 pts)
 
@@ -197,15 +198,15 @@ virtual auto Size() -> size_t = 0;
 
 `TableHandle`类中主要定义了以下类成员变量：
 
-- `tab_hdr_`为表的元数据。
+* `tab_hdr_`为表的元数据。
 
-- `table_id_`为表的id。
+* `table_id_`为表的id。
 
-- `disk_manager_`为磁盘管理器。
+* `disk_manager_`为磁盘管理器。
 
-- `buffer_pool_manager_`为缓冲区管理器。
+* `buffer_pool_manager_`为缓冲区管理器。
 
-- `schema_` 为表中存储的记录的模式
+* `schema_` 为表中存储的记录的模式
 
 你需要完成以下几个函数：
 
@@ -256,7 +257,7 @@ $d_3^1 = 13 - 4 = 9$，$d_3^2 = 13 - 2 = 11$，$d_4^2 = +inf$。LRU K算法选�
 
 PAX存储格式是一种行列混存的格式，其优势在于能够快速访问和抽取一页中的部分列数据。在OLAP任务中，列式存储利于数据分析算子进行有效的聚合运算和向量化加速。而PAX存储相比列室存储既能快速取出某一记录，也能做到读取整列数据。在WSDB中，PAX页面格式如下（与NAry模式存储的主要区别在slot memory部分）：
 
-```
+```text
 |<-------------------- Page Header ------------------->|
 | page last LSN | next_free_page_id | number of record |
 |<-------------------- Slot Memory ------------------->|
@@ -290,16 +291,16 @@ PAX Page Handle支持整列的读取（ReadChunk），给定一个记录模式�
 ### 提交材料
 
 1. 实验报告（提交一份PDF，命名格式：lab1\_学号\_姓名.pdf）：请在报告开头写上相关信息。
-   
+
    | 学号     | 姓名 | 邮箱                      | 完成题目    |
    | -------- | ---- | ------------------------- | ----------- |
-   | 12345678 | 张三 | zhangsan@smail.nju.edu.cn | 1/2/3/f1/f2 |
+   | 12345678 | 张三 | <zhangsan@smail.nju.edu.cn> | 1/2/3/f1/f2 |
 
 2. 代码：`wsdb/src`文件夹
 
 *提交示例：请将以上两部分内容打包并命名为lab1\_学号\_姓名.zip（例如lab1_123456_张三.zip）并上传至提交平台，请确保解压后目录树如下：*
 
-```
+```bash
 ├── lab1_123456_张三.pdf
 └── src
     ├── CMakeLists.txt
