@@ -25,3 +25,5 @@ docs/book
 src/parser/lex.yy.cpp
 src/parser/yacc.tab.cpp
 src/parser/yacc.tab.h
+test/test.tbl
+test/test

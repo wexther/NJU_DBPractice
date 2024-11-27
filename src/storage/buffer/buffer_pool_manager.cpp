@@ -26,7 +26,7 @@
 
 namespace wsdb {
 
-BufferPoolManager::BufferPoolManager(DiskManager *disk_manager, wsdb::LogManager *log_manager, size_t replacer_lru_k)
+BufferPoolManager::BufferPoolManager(DiskManager *disk_manager, LogManager *log_manager, size_t replacer_lru_k)
     : disk_manager_(disk_manager), log_manager_(log_manager)
 {
   if (REPLACER == "LRUReplacer") {
@@ -45,17 +45,23 @@ BufferPoolManager::BufferPoolManager(DiskManager *disk_manager, wsdb::LogManager
 auto BufferPoolManager::FetchPage(file_id_t fid, page_id_t pid) -> Page *
 {
   // WSDB_STUDENT_TODO(l1, t2);
-  std::lock_guard<std::mutex> lock(latch_);
+  std::lock_guard<std::mutex> lock{latch_};
 
-  wsdb::fid_pid_t fp{fid, pid};
-  frame_id_t      frame_id;
+  fid_pid_t  fp{fid, pid};
+  frame_id_t frame_id;
   if (page_frame_lookup_.contains(fp)) {
     frame_id = page_frame_lookup_[fp];
     replacer_->Pin(frame_id);
     frames_[frame_id].Pin();
+    WSDB_ASSERT(frames_[page_frame_lookup_[fp]].GetPage()->GetPageId() == pid &&
+                    frames_[page_frame_lookup_[fp]].GetPage()->GetFileId() == fid,
+        "map中的东西fp不匹配1");
   } else {
     frame_id = GetAvailableFrame();
     UpdateFrame(frame_id, fid, pid);
+    WSDB_ASSERT(frames_[page_frame_lookup_[fp]].GetPage()->GetPageId() == pid &&
+                    frames_[page_frame_lookup_[fp]].GetPage()->GetFileId() == fid,
+        "map中的东西fp不匹配2");
   }
   return frames_[frame_id].GetPage();
 }
@@ -63,37 +69,149 @@ auto BufferPoolManager::FetchPage(file_id_t fid, page_id_t pid) -> Page *
 auto BufferPoolManager::UnpinPage(file_id_t fid, page_id_t pid, bool is_dirty) -> bool
 {
   // WSDB_STUDENT_TODO(l1, t2);
-  std::lock_guard<std::mutex> lock(latch_);
+  std::lock_guard<std::mutex> lock{latch_};
 
-  wsdb::fid_pid_t fp{fid, pid};
-  if (page_frame_lookup_.contains(fp)) {
-    frame_id_t frame_id = page_frame_lookup_[fp];
-    Frame     &frame    = frames_[frame_id];
-    if (frame.InUse()) {
-      frame.Unpin();
-      if (!frame.InUse()) {
-        replacer_->Unpin(frame_id);
-      }
-      if (!frame.IsDirty()) {
-        frame.SetDirty(is_dirty);
-      }
-      return true;
-    }
+  fid_pid_t fp{fid, pid};
+  if (!page_frame_lookup_.contains(fp)) {
+    return false;
   }
-  return false;
+  frame_id_t frame_id{page_frame_lookup_[fp]};
+  Frame     &frame{frames_[frame_id]};
+  if (!frame.InUse()) {
+    return false;
+  }
+
+  frame.Unpin();
+  if (!frame.InUse()) {
+    replacer_->Unpin(frame_id);
+  }
+  if (!frame.IsDirty()) {
+    frame.SetDirty(is_dirty);
+  }
+  return true;
 }
 
-auto BufferPoolManager::DeletePage(file_id_t fid, page_id_t pid) -> bool { WSDB_STUDENT_TODO(l1, t2); }
+auto BufferPoolManager::DeletePage(file_id_t fid, page_id_t pid) -> bool
+{
+  // WSDB_STUDENT_TODO(l1, t2);
+  std::lock_guard<std::mutex> lock{latch_};
 
-auto BufferPoolManager::DeleteAllPages(file_id_t fid) -> bool { WSDB_STUDENT_TODO(l1, t2); }
+  fid_pid_t fp{fid, pid};
+  if (!page_frame_lookup_.contains(fp)) {
+    return false;
+  }
+  frame_id_t frame_id{page_frame_lookup_[fp]};
+  Frame     &frame{frames_[frame_id]};
+  if (frame.InUse()) {
+    return false;
+  }
 
-auto BufferPoolManager::FlushPage(file_id_t fid, page_id_t pid) -> bool { WSDB_STUDENT_TODO(l1, t2); }
+  disk_manager_->WritePage(fid, pid, frame.GetPage()->GetData());
+  frame.Reset();
+  free_list_.push_front(frame_id);
+  replacer_->Unpin(frame_id);
+  // 此处不应有Unpin，在该frame为非inuse状态时replacer中必为unpin状态
+  WSDB_ASSERT(page_frame_lookup_.erase(fp) == 1, "map擦除");
+  return true;
+}
 
-auto BufferPoolManager::FlushAllPages(file_id_t fid) -> bool { WSDB_STUDENT_TODO(l1, t2); }
+auto BufferPoolManager::DeleteAllPages(file_id_t fid) -> bool
+{
+  // WSDB_STUDENT_TODO(l1, t2);
+  std::lock_guard<std::mutex> lock{latch_};
 
-auto BufferPoolManager::GetAvailableFrame() -> frame_id_t { WSDB_STUDENT_TODO(l1, t2); }
+  bool delete_flag{true};
+  for (auto it{page_frame_lookup_.begin()}; it != page_frame_lookup_.end();) {
+    fid_pid_t fp{it->first};
+    if (fp.fid == fid) {
+      frame_id_t frame_id{page_frame_lookup_[fp]};
+      Frame     &frame{frames_[frame_id]};
+      if (frame.InUse()) {
+        delete_flag &= false;
+        continue;
+      }
 
-void BufferPoolManager::UpdateFrame(frame_id_t frame_id, file_id_t fid, page_id_t pid) { WSDB_STUDENT_TODO(l1, t2); }
+      disk_manager_->WritePage(fid, fp.pid, frame.GetPage()->GetData());
+      frame.Reset();
+      free_list_.push_front(frame_id);
+      replacer_->Unpin(frame_id);
+      // 此处不应有Unpin，在该frame为非inuse状态时replacer中必为unpin状态
+      delete_flag &= true;
+      it = page_frame_lookup_.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  return delete_flag;
+}
+
+auto BufferPoolManager::FlushPage(file_id_t fid, page_id_t pid) -> bool
+{
+  // WSDB_STUDENT_TODO(l1, t2);
+  std::lock_guard<std::mutex> lock{latch_};
+
+  fid_pid_t fp{fid, pid};
+  if (!page_frame_lookup_.contains(fp)) {
+    return false;
+  }
+
+  Frame &frame{frames_[page_frame_lookup_[fp]]};
+  if (frame.IsDirty()) {
+    disk_manager_->WritePage(fid, pid, frame.GetPage()->GetData());
+  }
+  return true;
+}
+
+auto BufferPoolManager::FlushAllPages(file_id_t fid) -> bool
+{
+  // WSDB_STUDENT_TODO(l1, t2);
+  std::lock_guard<std::mutex> lock{latch_};
+
+  for (auto &lookup_item : page_frame_lookup_) {
+    if (lookup_item.first.fid == fid) {
+      fid_pid_t fp{lookup_item.first};
+      Frame    &frame{frames_[page_frame_lookup_[fp]]};
+      if (frame.IsDirty()) {
+        disk_manager_->WritePage(fid, fp.pid, frame.GetPage()->GetData());
+      }
+    }
+  }
+  return true;  // 没有情况返回false
+}
+
+auto BufferPoolManager::GetAvailableFrame() -> frame_id_t
+{
+  // WSDB_STUDENT_TODO(l1, t2);
+  frame_id_t frame_id;
+  if (free_list_.empty()) {
+    if (!replacer_->Victim(&frame_id)) {
+      WSDB_THROW(WSDB_NO_FREE_FRAME, "bufferpoolmanager缓存");
+    }
+  } else {
+    frame_id = free_list_.front();
+    free_list_.pop_front();
+  }
+  return frame_id;
+}
+
+void BufferPoolManager::UpdateFrame(frame_id_t frame_id, file_id_t fid, page_id_t pid)
+{
+  // WSDB_STUDENT_TODO(l1, t2);
+  Frame    &frame{frames_[frame_id]};
+  Page     &page{*frame.GetPage()};
+  file_id_t ofid{page.GetFileId()};
+  page_id_t opid{page.GetPageId()};
+  if (frame.IsDirty()) {
+    disk_manager_->WritePage(ofid, opid, page.GetData());
+  }
+  page_frame_lookup_.erase(fid_pid_t{ofid, opid});
+  frame.Reset();
+  frame.Pin();
+  replacer_->Pin(frame_id);
+  page.SetFilePageId(fid, pid);
+  page_frame_lookup_.emplace(fid_pid_t{fid, pid}, frame_id);
+  disk_manager_->ReadPage(fid, pid, page.GetData());
+}
 
 auto BufferPoolManager::GetFrame(file_id_t fid, page_id_t pid) -> Frame *
 {

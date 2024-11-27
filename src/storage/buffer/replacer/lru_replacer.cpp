@@ -29,7 +29,7 @@ LRUReplacer::LRUReplacer() : cur_size_(0), max_size_(BUFFER_POOL_SIZE) {}
 auto LRUReplacer::Victim(frame_id_t *frame_id) -> bool
 {
   // WSDB_STUDENT_TODO(l1, t1);
-  std::lock_guard<std::mutex> lock(latch_);
+  std::lock_guard<std::mutex> lock{latch_};
 
   for (auto it = lru_list_.rbegin(); it != lru_list_.rend(); ++it) {
     if (it->second) {
@@ -47,13 +47,13 @@ auto LRUReplacer::Victim(frame_id_t *frame_id) -> bool
 void LRUReplacer::Pin(frame_id_t frame_id)
 {
   // WSDB_STUDENT_TODO(l1, t1);
-  std::lock_guard<std::mutex> lock(latch_);
+  std::lock_guard<std::mutex> lock{latch_};
 
-  auto frame_hash_it = lru_hash_.find(frame_id);
+  auto frame_hash_it{lru_hash_.find(frame_id)};
   if (frame_hash_it == lru_hash_.end()) {
     // 页面不在缓存
-    WSDB_ASSERT(lru_list_.size() < max_size_, "Pin不在缓存中的页面且缓存已满");
     // 由FAQ，认为此时缓存未满，若需处理其余情况，解以下注释
+    WSDB_ASSERT(lru_list_.size() < max_size_, "Pin不在缓存中的页面且缓存已满");
     // if (lru_list_.size() < max_size_) {
     //   // 缓存未满
     //   lru_list_.emplace_front(frame_id, false);
@@ -70,18 +70,16 @@ void LRUReplacer::Pin(frame_id_t frame_id)
     //     }
     //   }
     //   if (!delete_flag) {
-    //     WSDB_THROW(WSDB_EXCEPTION_EMPTY, "无可驱逐页面缓存");
+    //     WSDB_THROW(WSDB_NO_FREE_FRAME, "replacer中无可驱逐页面缓存");
     //   }
     lru_list_.emplace_front(frame_id, false);
     lru_hash_[frame_id] = lru_list_.begin();
     // }
   } else {
     // 页面在缓存
-    // WSDB_ASSERT(frame_hash_it->second->second, "Pin已被Pin过的页面");
-    // // 由FAQ，认为此时页面未被Pin，若需处理其余情况，解以下注释
     if (frame_hash_it->second->second) {
-    --cur_size_;
-    frame_hash_it->second->second = false;
+      --cur_size_;
+      frame_hash_it->second->second = false;
     }
     lru_list_.splice(lru_list_.begin(), lru_list_, frame_hash_it->second);
   }
@@ -90,25 +88,23 @@ void LRUReplacer::Pin(frame_id_t frame_id)
 void LRUReplacer::Unpin(frame_id_t frame_id)
 {
   // WSDB_STUDENT_TODO(l1, t1);
-  std::lock_guard<std::mutex> lock(latch_);
+  std::lock_guard<std::mutex> lock{latch_};
 
-  auto frame_hash_it = lru_hash_.find(frame_id);
-  WSDB_ASSERT(frame_hash_it != lru_hash_.end(), "Unpin未缓存的页面");
+  auto frame_hash_it{lru_hash_.find(frame_id)};
   // 由FAQ，认为此时页面已缓存，若需处理其余情况，解以下注释
+  WSDB_ASSERT(frame_hash_it != lru_hash_.end(), "Unpin未缓存的页面");
   // if (frame_hash_it != lru_hash_.end()) {
-  // WSDB_ASSERT(!frame_hash_it->second->second, "Unpin未被Pin过的页面");
-  // // 由FAQ，认为此时页面已被Pin，若需处理其余情况，解以下注释
   if (!frame_hash_it->second->second) {
     frame_hash_it->second->second = true;
     ++cur_size_;
-  }
+  }  // ？不应有unpin两次或unpin未被pin过的页面的行为
   // }
 }
 
 auto LRUReplacer::Size() -> size_t
 {
   // WSDB_STUDENT_TODO(l1, t1);
-  std::lock_guard<std::mutex> lock(latch_);
+  std::lock_guard<std::mutex> lock{latch_};
   return cur_size_;
 }
 
