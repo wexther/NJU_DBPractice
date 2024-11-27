@@ -60,7 +60,7 @@ void LRUReplacer::Pin(frame_id_t frame_id)
     //   lru_hash_[frame_id] = lru_list_.begin();
     // } else {
     //   // 缓存已满
-    //   // 同victim的逻辑，因为有锁所以无法调用victim，或可将mutex改为recursive_mutex
+    //   // 同 victim 的逻辑，因为有锁所以无法调用 victim，或可将 mutex 改为 recursive_mutex
     //   bool delete_flag{false};
     //   for (auto list_it {lru_list_.rbegin()}; list_it != lru_list_.rend(); ++list_it) {
     //     if (list_it->second) {
@@ -91,13 +91,13 @@ void LRUReplacer::Unpin(frame_id_t frame_id)
   std::lock_guard<std::mutex> lock{latch_};
 
   auto frame_hash_it{lru_hash_.find(frame_id)};
-  // 由FAQ，认为此时页面已缓存，若需处理其余情况，解以下注释
+  // 由 FAQ，认为此时页面已缓存，若需处理其余情况，解以下注释
   WSDB_ASSERT(frame_hash_it != lru_hash_.end(), "Unpin未缓存的页面");
   // if (frame_hash_it != lru_hash_.end()) {
   if (!frame_hash_it->second->second) {
     frame_hash_it->second->second = true;
     ++cur_size_;
-  }  // ？不应有unpin两次或unpin未被pin过的页面的行为
+  }  // ？不应有 unpin 两次或 unpin 未被 pin 过的页面的行为
   // }
 }
 
@@ -106,6 +106,6 @@ auto LRUReplacer::Size() -> size_t
   // WSDB_STUDENT_TODO(l1, t1);
   std::lock_guard<std::mutex> lock{latch_};
   return cur_size_;
-}  // 最好将该函数声明为const
+}  // 最好将该函数声明为 const，将 latch_ 用 mutable 修饰（“M&M 规则”：mutable 与 mutex 一起出现）
 
 }  // namespace wsdb

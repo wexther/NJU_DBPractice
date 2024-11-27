@@ -130,7 +130,7 @@ public:
 
   /**
    * Get the frame, used for test
-   * 正常不应使用
+   * 无锁，因此原则上不应使用
    */
   auto GetFrame(file_id_t fid, page_id_t pid) -> Frame *;
 

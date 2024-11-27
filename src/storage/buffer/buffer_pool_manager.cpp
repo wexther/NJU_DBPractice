@@ -110,7 +110,7 @@ auto BufferPoolManager::DeletePage(file_id_t fid, page_id_t pid) -> bool
   frame.Reset();
   free_list_.push_front(frame_id);
   // replacer_->Unpin(frame_id);
-  // 此处不应有Unpin，在该frame为非inuse状态时replacer中必为unpin状态
+  // 此处不应有 unpin，在该 frame 为非 inuse 状态时 replacer 中必为 unpin 状态
   page_frame_lookup_.erase(lookup_it);
   return true;
 }
@@ -135,7 +135,7 @@ auto BufferPoolManager::DeleteAllPages(file_id_t fid) -> bool
       frame.Reset();
       free_list_.push_front(frame_id);
       // replacer_->Unpin(frame_id);
-      // 此处不应有Unpin，在该frame为非inuse状态时replacer中必为unpin状态
+      // 此处不应有 unpin，在该 frame 为非 inuse 状态时 replacer 中必为 unpin 状态
       delete_flag &= true;
       lookup_it = page_frame_lookup_.erase(lookup_it);
     } else {
@@ -177,7 +177,7 @@ auto BufferPoolManager::FlushAllPages(file_id_t fid) -> bool
       }
     }
   }
-  return true;  // 没有情况返回false
+  return true;  // 没有情况返回 false
 }
 
 auto BufferPoolManager::GetAvailableFrame() -> frame_id_t

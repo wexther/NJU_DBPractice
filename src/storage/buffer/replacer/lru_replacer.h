@@ -28,7 +28,7 @@ namespace wsdb {
 
 /**
  * LRUReplacer implements the Least Recently Used replacement policy.
- * LRUReplacer无法在缓存已满的时候Pin不在缓存中的页面，在Unpin不在缓存中的页面时中止
+ * LRUReplacer 无法在缓存已满的时候 pin 不在缓存中的页面，在 unpin 不在缓存中的页面时中止
  */
 class LRUReplacer : public Replacer
 {
@@ -88,7 +88,7 @@ private:
   std::unordered_map<frame_id_t, std::list<std::pair<frame_id_t, bool>>::iterator> lru_hash_;
   // number of evictable frames
   size_t cur_size_;
-  // maximum number of frames，更改声明为const
+  // maximum number of frames，更改声明为 const
   size_t const max_size_;
 };
 
