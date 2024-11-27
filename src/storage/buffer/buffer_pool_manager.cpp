@@ -49,15 +49,16 @@ auto BufferPoolManager::FetchPage(file_id_t fid, page_id_t pid) -> Page *
 
   fid_pid_t  fp{fid, pid};
   frame_id_t frame_id;
-  auto       it{page_frame_lookup_.find(fp)};
-  if (it != page_frame_lookup_.end()) {
-    frame_id = it->second;
+  auto       lookup_it{page_frame_lookup_.find(fp)};
+  if (lookup_it != page_frame_lookup_.end()) {
+    frame_id = lookup_it->second;
     replacer_->Pin(frame_id);
     frames_[frame_id].Pin();
   } else {
     frame_id = GetAvailableFrame();
     UpdateFrame(frame_id, fid, pid);
   }
+
   return frames_[frame_id].GetPage();
 }
 
@@ -67,10 +68,12 @@ auto BufferPoolManager::UnpinPage(file_id_t fid, page_id_t pid, bool is_dirty) -
   std::lock_guard<std::mutex> lock{latch_};
 
   fid_pid_t fp{fid, pid};
-  if (!page_frame_lookup_.contains(fp)) {
+  auto      lookup_it{page_frame_lookup_.find(fp)};
+  if (lookup_it == page_frame_lookup_.end()) {
     return false;
   }
-  frame_id_t frame_id{page_frame_lookup_[fp]};
+
+  frame_id_t frame_id{lookup_it->second};
   Frame     &frame{frames_[frame_id]};
   if (!frame.InUse()) {
     return false;
@@ -92,10 +95,12 @@ auto BufferPoolManager::DeletePage(file_id_t fid, page_id_t pid) -> bool
   std::lock_guard<std::mutex> lock{latch_};
 
   fid_pid_t fp{fid, pid};
-  if (!page_frame_lookup_.contains(fp)) {
+  auto      lookup_it{page_frame_lookup_.find(fp)};
+  if (lookup_it == page_frame_lookup_.end()) {
     return false;
   }
-  frame_id_t frame_id{page_frame_lookup_[fp]};
+
+  frame_id_t frame_id{lookup_it->second};
   Frame     &frame{frames_[frame_id]};
   if (frame.InUse()) {
     return false;
@@ -104,9 +109,9 @@ auto BufferPoolManager::DeletePage(file_id_t fid, page_id_t pid) -> bool
   disk_manager_->WritePage(fid, pid, frame.GetPage()->GetData());
   frame.Reset();
   free_list_.push_front(frame_id);
-  replacer_->Unpin(frame_id);
+  // replacer_->Unpin(frame_id);
   // 此处不应有Unpin，在该frame为非inuse状态时replacer中必为unpin状态
-  page_frame_lookup_.erase(fp);
+  page_frame_lookup_.erase(lookup_it);
   return true;
 }
 
@@ -116,8 +121,8 @@ auto BufferPoolManager::DeleteAllPages(file_id_t fid) -> bool
   std::lock_guard<std::mutex> lock{latch_};
 
   bool delete_flag{true};
-  for (auto it{page_frame_lookup_.begin()}; it != page_frame_lookup_.end();) {
-    fid_pid_t fp{it->first};
+  for (auto lookup_it{page_frame_lookup_.begin()}; lookup_it != page_frame_lookup_.end();) {
+    fid_pid_t fp{lookup_it->first};
     if (fp.fid == fid) {
       frame_id_t frame_id{page_frame_lookup_[fp]};
       Frame     &frame{frames_[frame_id]};
@@ -129,12 +134,12 @@ auto BufferPoolManager::DeleteAllPages(file_id_t fid) -> bool
       disk_manager_->WritePage(fid, fp.pid, frame.GetPage()->GetData());
       frame.Reset();
       free_list_.push_front(frame_id);
-      replacer_->Unpin(frame_id);
+      // replacer_->Unpin(frame_id);
       // 此处不应有Unpin，在该frame为非inuse状态时replacer中必为unpin状态
       delete_flag &= true;
-      it = page_frame_lookup_.erase(it);
+      lookup_it = page_frame_lookup_.erase(lookup_it);
     } else {
-      ++it;
+      ++lookup_it;
     }
   }
   return delete_flag;
@@ -146,11 +151,12 @@ auto BufferPoolManager::FlushPage(file_id_t fid, page_id_t pid) -> bool
   std::lock_guard<std::mutex> lock{latch_};
 
   fid_pid_t fp{fid, pid};
-  if (!page_frame_lookup_.contains(fp)) {
+  auto      lookup_it{page_frame_lookup_.find(fp)};
+  if (lookup_it == page_frame_lookup_.end()) {
     return false;
   }
 
-  Frame &frame{frames_[page_frame_lookup_[fp]]};
+  Frame &frame{frames_[lookup_it->second]};
   if (frame.IsDirty()) {
     disk_manager_->WritePage(fid, pid, frame.GetPage()->GetData());
   }
@@ -201,11 +207,13 @@ void BufferPoolManager::UpdateFrame(frame_id_t frame_id, file_id_t fid, page_id_
   }
   page_frame_lookup_.erase(fid_pid_t{ofid, opid});
   frame.Reset();
-  frame.Pin();
-  replacer_->Pin(frame_id);
+
   page.SetFilePageId(fid, pid);
   page_frame_lookup_.emplace(fid_pid_t{fid, pid}, frame_id);
   disk_manager_->ReadPage(fid, pid, page.GetData());
+
+  frame.Pin();
+  replacer_->Pin(frame_id);
 }
 
 auto BufferPoolManager::GetFrame(file_id_t fid, page_id_t pid) -> Frame *
