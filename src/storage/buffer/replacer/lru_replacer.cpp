@@ -31,11 +31,11 @@ auto LRUReplacer::Victim(frame_id_t *frame_id) -> bool
   // WSDB_STUDENT_TODO(l1, t1);
   std::lock_guard<std::mutex> lock{latch_};
 
-  for (auto it = lru_list_.rbegin(); it != lru_list_.rend(); ++it) {
-    if (it->second) {
-      *frame_id = it->first;
-      lru_hash_.erase(it->first);
-      lru_list_.erase((++it).base());
+  for (auto list_it{lru_list_.rbegin()}; list_it != lru_list_.rend(); ++list_it) {
+    if (list_it->second) {
+      *frame_id = list_it->first;
+      lru_hash_.erase(list_it->first);
+      lru_list_.erase((++list_it).base());
       --cur_size_;
       return true;
     }
@@ -61,11 +61,11 @@ void LRUReplacer::Pin(frame_id_t frame_id)
     // } else {
     //   // 缓存已满
     //   // 同victim的逻辑，因为有锁所以无法调用victim，或可将mutex改为recursive_mutex
-    //   bool delete_flag = false;
-    //   for (auto it = lru_list_.rbegin(); it != lru_list_.rend(); ++it) {
-    //     if (it->second) {
-    //       lru_hash_.erase(it->first);
-    //       lru_list_.erase((++it).base());
+    //   bool delete_flag{false};
+    //   for (auto list_it {lru_list_.rbegin()}; list_it != lru_list_.rend(); ++list_it) {
+    //     if (list_it->second) {
+    //       lru_hash_.erase(list_it->first);
+    //       lru_list_.erase((++list_it).base());
     //       delete_flag = true;
     //     }
     //   }
