@@ -49,8 +49,9 @@ auto BufferPoolManager::FetchPage(file_id_t fid, page_id_t pid) -> Page *
 
   fid_pid_t  fp{fid, pid};
   frame_id_t frame_id;
-  if (page_frame_lookup_.contains(fp)) {
-    frame_id = page_frame_lookup_[fp];
+  auto       it{page_frame_lookup_.find(fp)};
+  if (it != page_frame_lookup_.end()) {
+    frame_id = it->second;
     replacer_->Pin(frame_id);
     frames_[frame_id].Pin();
   } else {
