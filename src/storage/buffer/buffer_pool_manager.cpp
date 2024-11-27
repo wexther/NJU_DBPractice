@@ -53,15 +53,9 @@ auto BufferPoolManager::FetchPage(file_id_t fid, page_id_t pid) -> Page *
     frame_id = page_frame_lookup_[fp];
     replacer_->Pin(frame_id);
     frames_[frame_id].Pin();
-    WSDB_ASSERT(frames_[page_frame_lookup_[fp]].GetPage()->GetPageId() == pid &&
-                    frames_[page_frame_lookup_[fp]].GetPage()->GetFileId() == fid,
-        "map中的东西fp不匹配1");
   } else {
     frame_id = GetAvailableFrame();
     UpdateFrame(frame_id, fid, pid);
-    WSDB_ASSERT(frames_[page_frame_lookup_[fp]].GetPage()->GetPageId() == pid &&
-                    frames_[page_frame_lookup_[fp]].GetPage()->GetFileId() == fid,
-        "map中的东西fp不匹配2");
   }
   return frames_[frame_id].GetPage();
 }
@@ -111,7 +105,7 @@ auto BufferPoolManager::DeletePage(file_id_t fid, page_id_t pid) -> bool
   free_list_.push_front(frame_id);
   replacer_->Unpin(frame_id);
   // 此处不应有Unpin，在该frame为非inuse状态时replacer中必为unpin状态
-  WSDB_ASSERT(page_frame_lookup_.erase(fp) == 1, "map擦除");
+  page_frame_lookup_.erase(fp);
   return true;
 }
 
