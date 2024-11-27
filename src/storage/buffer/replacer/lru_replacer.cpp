@@ -106,6 +106,6 @@ auto LRUReplacer::Size() -> size_t
   // WSDB_STUDENT_TODO(l1, t1);
   std::lock_guard<std::mutex> lock{latch_};
   return cur_size_;
-}
+}//最好将该函数声明为const
 
 }  // namespace wsdb
