@@ -186,7 +186,7 @@ auto BufferPoolManager::GetAvailableFrame() -> frame_id_t
   frame_id_t frame_id;
   if (free_list_.empty()) {
     if (!replacer_->Victim(&frame_id)) {
-      WSDB_THROW(WSDB_NO_FREE_FRAME, "bufferpoolmanager缓存");
+      WSDB_THROW(WSDB_NO_FREE_FRAME, "buffer pool manager 无空闲缓存");
     }
   } else {
     frame_id = free_list_.front();
