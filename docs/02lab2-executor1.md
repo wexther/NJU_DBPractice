@@ -37,7 +37,7 @@ flowchart LR
 
 对于引言中的例子，其算子树如下图所示：
 
-<img title="" src="./02lab2-executor1.assets/valcano.png" alt="valcano" style="zoom:50%;">
+![valcano](./02lab2-executor1.assets/valcano.png)
 
 在WSDB中，每个算子都由`Init`，`Next`，`IsEnd`接口组成，分别用于算子资源的初始化，获取下一条记录，以及判断算子计算是否结束。
 
@@ -49,13 +49,13 @@ void Executor::Execute(const AbstractExecutorUptr &executor, Context *ctx)
 
 这个函数主要负责对算子进行初始化，然后迭代地调用算子的`Next`接口获取下一条记录，直到算子计算全部结束。
 
-```
+```text
 +----+------+-------+----------+----------+--------+
 | id | name | score | group_id | l1_score | remark |
 +----+------+-------+----------+----------+--------+
 | 1  | n1   | 90    | 2        | 91.5     | r1     |
 +----+------+-------+----------+----------+--------+
-| 2  | n2   | 83    | 1	       | 89       | r2     |
+| 2  | n2   | 83    | 1        | 89       | r2     |
 +----+------+-------+----------+----------+--------+
 | 3  | n3   | 97    | 2        | 92       | r3     |
 +----+------+-------+----------+----------+--------+
@@ -71,17 +71,17 @@ void Executor::Execute(const AbstractExecutorUptr &executor, Context *ctx)
 
 4. 至此`Projection`的`Next`接口得到了一个记录，通过投影操作向`Executor`返回请求的字段，作为最终结果
 
-   ```
+   ```text
    +-------+-------+--------+
-   | n1	| 90	| r1	 |
+   | n1 | 90 | r1  |
    +-------+-------+--------+
    ```
 
 5. `Executor`继续通过`Projection`的`Next`接口抽取下一条记录，当`Filter`收到`Scan`返回的记录时发现第二条记录无法通过过滤，于是再次通过`Scan`的`Next`抽取第三条记录，经过检查后发现满足过滤条件，于是返回给`Projection`，并由其完成其余投影操作后将结果返回给`Executor`。
 
-   ```
+   ```text
    +-------+-------+--------+
-   | n3	| 97	| r3	 |
+   | n3 | 97 | r3  |
    +-------+-------+--------+
    ```
 
@@ -153,7 +153,7 @@ private:
   }
   ```
 
-  在`ShowTablesExecutor`的`Next`函数中，首先检查 table 信息是否已全部输出，如果没有则根据 cursor_ 位置获取对应的 table 信息，并生成记录，最后递增 cursor_ 。
+  在`ShowTablesExecutor`的`Next`函数中，首先检查 table 信息是否已全部输出，如果没有则根据 cursor_位置获取对应的 table 信息，并生成记录，最后递增 cursor_ 。
 
 需要注意的是，DDL语句以及DML中的增删改语句不需要执行`Init`函数，大部分的基本算子（`Basic`）可能都需要在Init期间做一些资源的初始化。
 
@@ -165,21 +165,21 @@ private:
 select name, score, remark from nju_db where group_id = 2 and l1_score > 90 order by desc score, id limit 10; 
 ```
 
-* `execution/executor_insert.cpp`：插入记录，需要同时插入表格和索引
-* `execution/executor_seqscan.cpp`：实现全表扫描
-* `execution/executor_limit.cpp`：限制结果集大小
-* `execution/executor_projection.cpp`：投影操作
-* `execution/executor_delete.cpp`：删除记录，需要同时在表格和索引中删除
-* `execution/executor_update.cpp`：更新记录，需要同时更新表格和索引
-* `execution/executor_filter.cpp`：过滤掉不符合条件的记录
-* `execution/executor_sort.cpp`：内排序，中间结果能全部载入内存，根据给定列模式进行升序或降序排序，目前只需要支持全列降序或全列升序，即不需要支持单列顺序，语法为order by (asc,desc,_) \<column list\>，例如上述示例中的`order by desc score, id`会首先按照score降序排列，对于相等的score再根据id降序排列。
+- `execution/executor_insert.cpp`：插入记录，需要同时插入表格和索引
+- `execution/executor_seqscan.cpp`：实现全表扫描
+- `execution/executor_limit.cpp`：限制结果集大小
+- `execution/executor_projection.cpp`：投影操作
+- `execution/executor_delete.cpp`：删除记录，需要同时在表格和索引中删除
+- `execution/executor_update.cpp`：更新记录，需要同时更新表格和索引
+- `execution/executor_filter.cpp`：过滤掉不符合条件的记录
+- `execution/executor_sort.cpp`：内排序，中间结果能全部载入内存，根据给定列模式进行升序或降序排序，目前只需要支持全列降序或全列升序，即不需要支持单列顺序，语法为order by (asc,desc,_) \<column list\>，例如上述示例中的`order by desc score, id`会首先按照score降序排列，对于相等的score再根据id降序排列。
 
 建议阅读代码列表：
 
-* `execution/executor_ddl.cpp`
-* `system/handle/record_handle.h`
-* `system/handle/index_handle.h`
-* `common/value.h`
+- `execution/executor_ddl.cpp`
+- `system/handle/record_handle.h`
+- `system/handle/index_handle.h`
+- `common/value.h`
 
 ### 附加实验 f1: 嵌套循环内连接与归并排序（10pts）
 
@@ -191,39 +191,39 @@ select i_id, s_i_id from item, stock order by i_id, s_i_id;
 
 归并排序是最经典的外部排序算法之一。具体实现上又被称为k路归并排序。具体来说，一个文件为一路，共两组文件。一组文件作为读入文件，另一组文件负责接收当前归并之后的结果。比如有如下一组数列[5,3,4,6,2,6,7,3,0,5,3,1,7,8,2]按照升序进行3路归并排序且内存中可用于排序的缓存大小为2，首先进行准备工作进行初始文件划分。按照读入顺序将排序缓存的数据依次写入3个文件，写完后更换下一个文件继续写。完成后三个文件中数据如下
 
-```
+```text
 |3,5|3,7|7,8|
 ```
 
-```
+```text
 |4,6|0,5|2|
 ```
 
-```
+```text
 |2,6|1,3|
 ```
 
 首先准备下一组文件中的第一个文件，该文件中记录了上述三个文件中的第一列数据的排序结果。维护一个大小等于k的小根堆，从三个文件中将第一个数读出，分别为3,4,2。此时堆中最小数为2，在输出文件中写入2，并在2所在的第三个文件中取出下一个数字6，加入到堆中。此时堆内数字为3，4，6，最小数字为3，在输出文件中再写入数字3，从3所在的第一个文件中读取下一个数字5，加入到堆中。依此类推，直到第一个文件准备完成。
 
-```
+```text
 |2,3,4,5,6,6|
 ```
 
 同理，准备第二个文件
 
-```
+```text
 |0,1,3,3,5,7|
 ```
 
 第三个文件
 
-```
+```text
 |2,7,8|
 ```
 
 这时我们已经将上一组的所有数据做了归并。需要注意，该归并结果没有出现第二列，如果在上一组文件中出现更多列，需要将剩余数据再次从第一个文件开始写入直到上一组文件中的数据全部做了归并。由于本组文件只有一列，因此通过一次归并就得到最终结果：
 
-```
+```text
 |0,1,2,2,3,3,3,4,5,5,6,6,7,7,8|
 ```
 
@@ -250,18 +250,18 @@ def nestedloop_join(left, right, condition):
 
 2. 功能分数（90%）：需要通过`wsdb/test/sql`目录下的SQL语句测试。
 
-    * t1: <u>**顺序**</u>通过`wsdb/test/sql/lab02/t1`下的SQL测试并与`expected`输出比较，无差异获得该小题满分，测试文件分值分别为
+    - t1: \_**顺序**\_通过`wsdb/test/sql/lab02/t1`下的SQL测试并与`expected`输出比较，无差异获得该小题满分，测试文件分值分别为
 
-        * `01_prepare_table_dbcourse.sql`: 15 pts
-        * `02_seqscan_limit_projection.sql`: 30 pts
-        * `03_filter_update_delete.sql`: 30 pts
-        * `04_sort_final.sql`: 15 pts
+        - `01_prepare_table_dbcourse.sql`: 15 pts
+        - `02_seqscan_limit_projection.sql`: 30 pts
+        - `03_filter_update_delete.sql`: 30 pts
+        - `04_sort_final.sql`: 15 pts
 
-    * f1: <u>**顺序**</u>通过`wsdb/test/sql/lab02/f1`下的SQL测试，请先解压`expected.tar.gz`。（提示，该测试需要的时间可能较长，如若20分钟之内不能得到测试结果，可能是实现不够高效或实现有误）
+    - f1: \_**顺序**\_通过`wsdb/test/sql/lab02/f1`下的SQL测试，请先解压`expected.tar.gz`。（提示，该测试需要的时间可能较长，如若20分钟之内不能得到测试结果，可能是实现不够高效或实现有误）
 
-        * `04_merge_sort.sql`: 10pts
+        - `04_merge_sort.sql`: 10pts
 
-    * 提示：你可以cd到`wsdb/test/sql/lab02`目录下通过脚本`evaluate.sh`进行测试，也可以使用终端的命令行工具逐个文件测试或使用交互模式逐个命令测试，**注意：脚本并不负责项目的编译，所以请在运行脚本之前手动编译。**
+    - 提示：你可以cd到`wsdb/test/sql/lab02`目录下通过脚本`evaluate.sh`进行测试，也可以使用终端的命令行工具逐个文件测试或使用交互模式逐个命令测试，**注意：脚本并不负责项目的编译，所以请在运行脚本之前手动编译。**
 
       ```bash
       $ bash evaluate.sh <bin directory> <test sql directory>
@@ -270,28 +270,28 @@ def nestedloop_join(left, right, condition):
 
 **重要：请勿尝试抄袭代码或搬运他人实验结果，我们会严格审查，如被发现将取消大实验分数，情节严重可能会对课程总评产生影响!!!**
 
-3. 测试方法：编译`wsdb`，`client`，`cd`到可执行文件目录下并启动两个终端分别执行：
-   
+1. 测试方法：编译`wsdb`，`client`，`cd`到可执行文件目录下并启动两个终端分别执行：
+
    ```shell
-   $ ./wsdb
-   $ ./client
+   ./wsdb
+   ./client
    ```
-   
+
    关于client的更多用法可参考00basic.md或使用-h参数查看。如果`wsdb`因为端口监听异常启动失败（通常原因是已经启用了一个wsdb进程或前一次启动进程未正常退出导致端口未释放），需要手动杀死进程或者等待一段时间wsdb释放资源后再重新启动。
 
 ### 提交材料
 
 1. 实验报告（提交一份PDF，命名格式：lab2\_学号\_姓名.pdf）：请在报告开头写上相关信息。
-   
+
    | 学号     | 姓名 | 邮箱                      | 完成题目 |
       | -------- | ---- | ------------------------- | -------- |
-   | 12345678 | 张三 | zhangsan@smail.nju.edu.cn | t1/f1    |
+   | 12345678 | 张三 | <zhangsan@smail.nju.edu.cn> | t1/f1    |
 
 2. 代码：`wsdb/src`文件夹
 
 *提交示例：请将以上两部分内容打包并命名为lab2\_学号\_姓名.zip（例如lab2_123456_张三.zip）并上传至提交平台，请确保解压后目录树如下：*
 
-```
+```shell
 ├── lab2_123456_张三.pdf
 └── src
  ├── CMakeLists.txt

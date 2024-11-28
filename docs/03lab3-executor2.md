@@ -13,4 +13,3 @@ order by desc id
 group by id 
 having id=3 and avg(score) > 90.0;
 ```
-
