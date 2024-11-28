@@ -51,14 +51,15 @@ auto TableHandle::GetRecord(const RID &rid) -> RecordUptr
   PageHandleUptr page_handle{FetchPageHandle(page_id)};
   if (!BitMap::GetBit(page_handle->GetBitmap(), slot_id)) {
     buffer_pool_manager_->UnpinPage(table_id_, page_id, false);
-    // 在获得页句柄的时候调用 buffer_pool_manager_->FetchPage()，因此这里要 unpin
+    // 在获得页句柄的时候调用 buffer_pool_manager_->FetchPage()，因此这里要 unpin，以下 unpin 同理
     WSDB_THROW(
-        WSDB_RECORD_MISS, fmt::format("Table Handle中RID(SlotID:{},PageID:{})处的Record不存在", slot_id, page_id));
+        WSDB_RECORD_MISS, fmt::format("Table Handle 中 RID(SlotID:{},PageID:{}) 处的 Record 不存在", slot_id, page_id));
   }
 
   char *nullmap_ptr{nullmap.get()}, *data_ptr{data.get()};
   page_handle->ReadSlot(slot_id, nullmap_ptr, data_ptr);
   buffer_pool_manager_->UnpinPage(table_id_, page_id, false);
+
   return std::make_unique<Record>(schema_.get(), nullmap_ptr, data_ptr, rid);
   // ？未将这两个指针的所有权转移给 Record，因此这里的 nullmap 和 data
   // 指针将会被销毁，造成未定义行为。但无法将这两个指针的所有权转移给 Record。
@@ -74,14 +75,14 @@ auto TableHandle::InsertRecord(const Record &record) -> RID
 
   char     *bitmap{page_handle->GetBitmap()};
   slot_id_t slot_id{static_cast<slot_id_t>(BitMap::FindFirst(bitmap, tab_hdr_.rec_per_page_, 0, false))};
-  WSDB_ASSERT(slot_id != static_cast<slot_id_t>(tab_hdr_.rec_per_page_), "Page is full");
-
-  page_handle->WriteSlot(slot_id, record.GetNullMap(), record.GetData(), false);
-  BitMap::SetBit(bitmap, slot_id, true);
-  tab_hdr_.rec_num_++;
 
   Page &page{*page_handle->GetPage()};
-  if (tab_hdr_.rec_num_ == tab_hdr_.rec_per_page_) {
+  page_handle->WriteSlot(slot_id, record.GetNullMap(), record.GetData(), false);
+  BitMap::SetBit(bitmap, slot_id, true);
+  ++tab_hdr_.rec_num_;
+  page.SetRecordNum(page.GetRecordNum() + 1);  // 建议增加对 page 的 record_num 的测试
+
+  if (page.GetRecordNum() == tab_hdr_.rec_per_page_) {
     tab_hdr_.first_free_page_ = page.GetNextFreePageId();
     page.SetNextFreePageId(INVALID_PAGE_ID);  // 设置为 INVALID_PAGE_ID 是合理的选择
   }
@@ -96,7 +97,7 @@ void TableHandle::InsertRecord(const RID &rid, const Record &record)
   page_id_t page_id{rid.PageID()};
   if (page_id == INVALID_PAGE_ID) {
     // buffer_pool_manager_->UnpinPage(table_id_, page_id, false);
-    // 这里理应不需要unpin
+    // 这里理应不需要 unpin
     WSDB_THROW(WSDB_PAGE_MISS, fmt::format("Page: {}", rid.PageID()));
   }
   // WSDB_STUDENT_TODO(l1, t3);
@@ -105,14 +106,15 @@ void TableHandle::InsertRecord(const RID &rid, const Record &record)
   char          *bitmap{page_handle->GetBitmap()};
   if (BitMap::GetBit(bitmap, slot_id)) {
     WSDB_THROW(
-        WSDB_RECORD_EXISTS, fmt::format("Table Handle中RID(SlotID:{},PageID:{})处的Record已经存在", slot_id, page_id));
+        WSDB_RECORD_EXISTS, fmt::format("Table Handle 中 RID(SlotID:{},PageID:{}) 处的 Record 已经存在", slot_id, page_id));
   }
 
+  Page &page{*page_handle->GetPage()};
   page_handle->WriteSlot(slot_id, record.GetNullMap(), record.GetData(), false);
   BitMap::SetBit(bitmap, slot_id, true);
   tab_hdr_.rec_num_++;
+  page.SetRecordNum(page.GetRecordNum() + 1);
 
-  Page &page{*page_handle->GetPage()};
   if (tab_hdr_.rec_num_ == tab_hdr_.rec_per_page_) {
     tab_hdr_.first_free_page_ = page.GetNextFreePageId();
     page.SetNextFreePageId(INVALID_PAGE_ID);  // 设置为 INVALID_PAGE_ID 是合理的选择
@@ -131,13 +133,15 @@ void TableHandle::DeleteRecord(const RID &rid)
   if (!BitMap::GetBit(bitmap, slot_id)) {
     buffer_pool_manager_->UnpinPage(table_id_, page_id, false);
     WSDB_THROW(
-        WSDB_RECORD_MISS, fmt::format("Table Handle中RID(SlotID:{},PageID:{})处的Record不存在", slot_id, page_id));
+        WSDB_RECORD_MISS, fmt::format("Table Handle 中 RID(SlotID:{},PageID:{}) 处的 Record 不存在", slot_id, page_id));
   }
 
+  Page &page{*page_handle->GetPage()};
   BitMap::SetBit(bitmap, slot_id, false);
   tab_hdr_.rec_num_--;
-  Page &page{*page_handle->GetPage()};
-  if (tab_hdr_.rec_num_ == tab_hdr_.rec_per_page_ - 1) {
+  page.SetRecordNum(page.GetRecordNum() - 1);
+
+  if (page.GetRecordNum() == tab_hdr_.rec_per_page_ - 1) {
     page.SetNextFreePageId(tab_hdr_.first_free_page_);
     tab_hdr_.first_free_page_ = page_id;
   }
@@ -153,7 +157,7 @@ void TableHandle::UpdateRecord(const RID &rid, const Record &record)
   if (!BitMap::GetBit(page_handle->GetBitmap(), slot_id)) {
     buffer_pool_manager_->UnpinPage(table_id_, page_id, false);
     WSDB_THROW(
-        WSDB_RECORD_MISS, fmt::format("Table Handle中RID(SlotID:{},PageID:{})处的Record不存在", slot_id, page_id));
+        WSDB_RECORD_MISS, fmt::format("Table Handle 中 RID(SlotID:{},PageID:{}) 处的 Record 不存在", slot_id, page_id));
   }
 
   page_handle->WriteSlot(slot_id, record.GetNullMap(), record.GetData(), true);
