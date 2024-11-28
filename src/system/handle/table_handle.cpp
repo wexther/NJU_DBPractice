@@ -80,9 +80,10 @@ auto TableHandle::InsertRecord(const Record &record) -> RID
   page_handle->WriteSlot(slot_id, record.GetNullMap(), record.GetData(), false);
   BitMap::SetBit(bitmap, slot_id, true);
   ++tab_hdr_.rec_num_;
-  page.SetRecordNum(page.GetRecordNum() + 1);  // 建议增加对 page 的 record_num 的测试
+  size_t record_num{page.GetRecordNum()};
+  page.SetRecordNum(record_num + 1);  // 建议增加对 page 的 record_num 的测试
 
-  if (page.GetRecordNum() == tab_hdr_.rec_per_page_) {
+  if (record_num + 1 == tab_hdr_.rec_per_page_) {
     tab_hdr_.first_free_page_ = page.GetNextFreePageId();
     page.SetNextFreePageId(INVALID_PAGE_ID);  // 设置为 INVALID_PAGE_ID 是合理的选择
   }
@@ -105,17 +106,18 @@ void TableHandle::InsertRecord(const RID &rid, const Record &record)
   slot_id_t      slot_id{rid.SlotID()};
   char          *bitmap{page_handle->GetBitmap()};
   if (BitMap::GetBit(bitmap, slot_id)) {
-    WSDB_THROW(
-        WSDB_RECORD_EXISTS, fmt::format("Table Handle 中 RID(SlotID:{},PageID:{}) 处的 Record 已经存在", slot_id, page_id));
+    WSDB_THROW(WSDB_RECORD_EXISTS,
+        fmt::format("Table Handle 中 RID(SlotID:{},PageID:{}) 处的 Record 已经存在", slot_id, page_id));
   }
 
   Page &page{*page_handle->GetPage()};
   page_handle->WriteSlot(slot_id, record.GetNullMap(), record.GetData(), false);
   BitMap::SetBit(bitmap, slot_id, true);
   tab_hdr_.rec_num_++;
-  page.SetRecordNum(page.GetRecordNum() + 1);
+  size_t record_num{page.GetRecordNum()};
+  page.SetRecordNum(record_num + 1);
 
-  if (tab_hdr_.rec_num_ == tab_hdr_.rec_per_page_) {
+  if (record_num + 1 == tab_hdr_.rec_per_page_) {
     tab_hdr_.first_free_page_ = page.GetNextFreePageId();
     page.SetNextFreePageId(INVALID_PAGE_ID);  // 设置为 INVALID_PAGE_ID 是合理的选择
   }
@@ -139,9 +141,10 @@ void TableHandle::DeleteRecord(const RID &rid)
   Page &page{*page_handle->GetPage()};
   BitMap::SetBit(bitmap, slot_id, false);
   tab_hdr_.rec_num_--;
-  page.SetRecordNum(page.GetRecordNum() - 1);
+  size_t record_num{page.GetRecordNum()};
+  page.SetRecordNum(record_num - 1);
 
-  if (page.GetRecordNum() == tab_hdr_.rec_per_page_ - 1) {
+  if (record_num == tab_hdr_.rec_per_page_) {
     page.SetNextFreePageId(tab_hdr_.first_free_page_);
     tab_hdr_.first_free_page_ = page_id;
   }
