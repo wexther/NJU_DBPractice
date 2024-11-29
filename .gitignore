@@ -27,3 +27,4 @@ src/parser/yacc.tab.cpp
 src/parser/yacc.tab.h
 test/test.tbl
 test/test
+test/sql/lab02/t1/output

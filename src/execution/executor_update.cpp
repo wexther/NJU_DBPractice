@@ -52,7 +52,7 @@ void UpdateExecutor::Next()
     Record &record{*child_->GetRecord()};
     for (auto &update : updates_) {
       Record new_record{Record(
-          std::make_unique<RecordSchema>(update.first).get(), std::vector<ValueSptr>{update.second}, record.GetRID())};
+          std::make_unique<RecordSchema>(std::vector<RTField>{update.first}).get(), std::vector<ValueSptr>{update.second}, record.GetRID())};
       tbl_->UpdateRecord(record.GetRID(), new_record);
       for (IndexHandle *const &index : indexes_) {
         index->UpdateRecord(record, new_record);
