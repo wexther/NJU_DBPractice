@@ -38,7 +38,16 @@ void InsertExecutor::Next()
   // number of inserted records
   int count = 0;
 
-  WSDB_STUDENT_TODO(l2, t1);
+  // WSDB_STUDENT_TODO(l2, t1);
+  // 理论上讲按火山模型这里应该只插入一条记录？但是按照下文这里应该插入所有的记录
+  for (RecordUptr &insert_record : inserts_) {
+    tbl_->InsertRecord(*insert_record);
+    count++;
+
+    for (auto &index_handle : indexes_) {
+      index_handle->InsertRecord(*insert_record);
+    }
+  }
 
   std::vector<ValueSptr> values{ValueFactory::CreateIntValue(count)};
   record_ = std::make_unique<Record>(out_schema_.get(), values, INVALID_RID);
