@@ -31,6 +31,11 @@ void SeqScanExecutor::Init()
 
   // WSDB_STUDENT_TODO(l2, t1);
   is_end_ = rid_ == INVALID_RID;
+  if (!is_end_) {
+    record_ = tab_->GetRecord(rid_);
+    rid_    = tab_->GetNextRID(rid_);
+    is_end_ = rid_ == INVALID_RID;
+  }
 }
 
 void SeqScanExecutor::Next()
