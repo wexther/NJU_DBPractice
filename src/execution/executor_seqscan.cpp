@@ -36,8 +36,6 @@ void SeqScanExecutor::Init()
 void SeqScanExecutor::Next()
 {
   // WSDB_STUDENT_TODO(l2, t1);
-  WSDB_ASSERT(!is_end_, "SeqScanExecutor 已经结束");
-
   record_ = tab_->GetRecord(rid_);
   rid_    = tab_->GetNextRID(rid_);
 

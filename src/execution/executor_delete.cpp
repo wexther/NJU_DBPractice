@@ -34,8 +34,6 @@ void DeleteExecutor::Init() { WSDB_FETAL("DeleteExecutor does not support Init")
 
 void DeleteExecutor::Next()
 {
-  WSDB_ASSERT(!is_end_, "DeleteExecutor 已经结束");
-
   // number of deleted records
   int count = 0;
 
@@ -45,15 +43,15 @@ void DeleteExecutor::Next()
     child_->Next();
     tbl_->DeleteRecord(child_->GetRecord()->GetRID());
     count++;
-    
-    for (auto index : indexes_) {
+
+    for (auto &index : indexes_) {
       index->DeleteRecord(*child_->GetRecord());
     }
   }
 
   std::vector<ValueSptr> values{ValueFactory::CreateIntValue(count)};
   record_ = std::make_unique<Record>(out_schema_.get(), values, INVALID_RID);
-  
+
   is_end_ = true;
 }
 

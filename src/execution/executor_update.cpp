@@ -42,15 +42,27 @@ void UpdateExecutor::Init() { WSDB_FETAL("UpdateExecutor does not support Init")
 
 void UpdateExecutor::Next()
 {
-  WSDB_ASSERT(!is_end_, "UpdateExecutor 已经结束");
   // number of updated records
   int count = 0;
 
   // WSDB_STUDENT_TODO(l2, t1);
+  child_->Init();
+  while (!child_->IsEnd()) {
+    child_->Next();
+    Record &record{*child_->GetRecord()};
+    for (auto &update : updates_) {
+      Record new_record{Record(
+          std::make_unique<RecordSchema>(update.first).get(), std::vector<ValueSptr>{update.second}, record.GetRID())};
+      tbl_->UpdateRecord(record.GetRID(), new_record);
+      for (IndexHandle *const &index : indexes_) {
+        index->UpdateRecord(record, new_record);
+      }
+    }
+    count++;
+  }
 
   std::vector<ValueSptr> values{ValueFactory::CreateIntValue(count)};
   record_ = std::make_unique<Record>(out_schema_.get(), values, INVALID_RID);
-  
   is_end_ = true;
 }
 
