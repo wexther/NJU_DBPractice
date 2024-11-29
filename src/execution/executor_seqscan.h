@@ -21,7 +21,7 @@
 
 /**
  * @brief Iterate over all records in the table, check TableHandle for more details
- * 
+ *
  */
 
 #ifndef WSDB_EXECUTOR_SEQSCAN_H
@@ -46,6 +46,7 @@ public:
 private:
   TableHandle *tab_;
   RID          rid_;
+  bool         is_end_;
 };
 }  // namespace wsdb
 
