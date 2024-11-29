@@ -43,8 +43,10 @@ void ProjectionExecutor::Next()
 {
   // WSDB_STUDENT_TODO(l2, t1);
   WSDB_ASSERT(!is_end_, "ProjectionExecutor 已经结束");
+
   child_->Next();
   record_ = std::make_unique<Record>(out_schema_.get(), *child_->GetRecord());
+  
   is_end_ = child_->IsEnd();
 }
 

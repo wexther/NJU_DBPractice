@@ -36,6 +36,7 @@ void InsertExecutor::Init() { WSDB_FETAL("InsertExecutor does not support Init")
 void InsertExecutor::Next()
 {
   WSDB_ASSERT(!is_end_, "InsertExecutor 已经结束");
+  
   // number of inserted records
   int count = 0;
 

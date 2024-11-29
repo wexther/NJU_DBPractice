@@ -40,9 +40,11 @@ void LimitExecutor::Next()
 {
   // WSDB_STUDENT_TODO(l2, t1);
   WSDB_ASSERT(!is_end_, "LimitExecutor 已经结束");
+
   child_->Next();
   record_ = child_->GetRecord();
   count_++;
+  
   is_end_ = child_->IsEnd() || count_ >= limit_;
 }
 
