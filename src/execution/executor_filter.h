@@ -21,7 +21,7 @@
 
 /**
  * @brief Filter out the records that can not pass the filter function
- * 
+ *
  */
 
 #ifndef WSDB_EXECUTOR_FILTER_H
@@ -45,8 +45,9 @@ public:
   [[nodiscard]] auto GetOutSchema() const -> const RecordSchema * override;
 
 private:
-  AbstractExecutorUptr                child_;
-  std::function<bool(const Record &)> filter_;
+  const AbstractExecutorUptr                child_;   // 更改声明为const
+  const std::function<bool(const Record &)> filter_;  // 更改声明为const
+  bool                                      is_end_;
 };
 
 }  // namespace wsdb

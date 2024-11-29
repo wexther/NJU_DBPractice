@@ -26,11 +26,34 @@ namespace wsdb {
 FilterExecutor::FilterExecutor(AbstractExecutorUptr child, std::function<bool(const Record &)> filter)
     : AbstractExecutor(Basic), child_(std::move(child)), filter_(std::move(filter))
 {}
-void FilterExecutor::Init() { WSDB_STUDENT_TODO(l2, t1); }
+void FilterExecutor::Init()
+{
+  // WSDB_STUDENT_TODO(l2, t1);
+  child_->Init();
 
-void FilterExecutor::Next() { WSDB_STUDENT_TODO(l2, t1); }
+  is_end_ = child_->IsEnd();
+}
 
-auto FilterExecutor::IsEnd() const -> bool { WSDB_STUDENT_TODO(l2, t1); }
+void FilterExecutor::Next()
+{
+  // WSDB_STUDENT_TODO(l2, t1);
+  while (!is_end_) {
+    child_->Next();
+    if (filter_(*child_->GetRecord())) {
+      record_ = child_->GetRecord();
+      is_end_ = child_->IsEnd();
+      break;
+    } else {
+      is_end_ = child_->IsEnd();
+    }
+  }
+}
+
+auto FilterExecutor::IsEnd() const -> bool
+{
+  // WSDB_STUDENT_TODO(l2, t1);
+  return is_end_;
+}
 
 auto FilterExecutor::GetOutSchema() const -> const RecordSchema * { return child_->GetOutSchema(); }
 }  // namespace wsdb
