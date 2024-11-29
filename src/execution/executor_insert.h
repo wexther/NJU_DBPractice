@@ -21,7 +21,7 @@
 
 /**
  * @brief Insert the records into the table and the indexes
- * 
+ *
  */
 
 #include "executor_abstract.h"
@@ -44,10 +44,10 @@ public:
   [[nodiscard]] auto IsEnd() const -> bool override;
 
 private:
-  TableHandle             *tbl_;
-  std::list<IndexHandle *> indexes_;
-  std::vector<RecordUptr>  inserts_;
-  bool                     is_end_;
+  TableHandle *const             tbl_;      // 更改声明为 const
+  const std::list<IndexHandle *> indexes_;  // 更改声明为 const
+  const std::vector<RecordUptr>  inserts_;  // 更改声明为 const
+  bool                           is_end_;
 };
 }  // namespace wsdb
 
