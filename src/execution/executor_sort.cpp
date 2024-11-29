@@ -108,7 +108,7 @@ auto SortExecutor::GetSortFileName(size_t file_group, size_t file_idx) const -> 
 
 void SortExecutor::SortBuffer()
 {
-  // WSDB_STUDENT_TODO(L2, t1);'
+  // WSDB_STUDENT_TODO(L2, t1);
   std::sort(sort_buffer_.begin(), sort_buffer_.end(), [this](const RecordUptr &lhs, const RecordUptr &rhs) {
     return Compare(*lhs, *rhs);
   });
