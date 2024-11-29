@@ -44,11 +44,13 @@ public:
   [[nodiscard]] auto GetOutSchema() const -> const RecordSchema * override;
 
 private:
-  AbstractExecutorUptr child_;
-  // max number of records to return
-  int limit_;
+  const AbstractExecutorUptr child_;  // 更改声明为const
+  // max number of records to return，更改声明为const
+  const int limit_;
   // current number of records returned
   int count_;
+  // 新加的
+  bool is_end_;
 };
 }  // namespace wsdb
 

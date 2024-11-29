@@ -44,9 +44,10 @@ public:
   [[nodiscard]] auto GetOutSchema() const -> const RecordSchema * override;
 
 private:
-  TableHandle *tab_;
-  RID          rid_;
-  bool         is_end_;
+  TableHandle *const tab_;  // 更改声明为const
+  RID                rid_;
+  // 新加的
+  bool is_end_;
 };
 }  // namespace wsdb
 
