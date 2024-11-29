@@ -52,13 +52,19 @@ SortExecutor::~SortExecutor()
 
 void SortExecutor::Init()
 {
-  // TODO: decide whether to use merge sort according to the cardinality of the child. 
+  // TODO: decide whether to use merge sort according to the cardinality of the child.
   // leave is_merge_sort_ as false if you just want to use in-memory sort
   is_merge_sort_ = false;
   if (is_merge_sort_) {
     WSDB_STUDENT_TODO(l2, f1);
   }
-  WSDB_STUDENT_TODO(l2, t1);
+  // WSDB_STUDENT_TODO(l2, t1);
+  for (child_->Init(); !child_->IsEnd(); child_->Next()) {
+    sort_buffer_.push_back(child_->GetRecord());
+  }
+  SortBuffer();
+  // is_sorted_ = true;
+  buf_idx_ = 0;
 }
 
 void SortExecutor::Next()
@@ -66,7 +72,13 @@ void SortExecutor::Next()
   if (is_merge_sort_) {
     WSDB_STUDENT_TODO(L2, f1);
   }
-  WSDB_STUDENT_TODO(L2, t1);
+  // WSDB_STUDENT_TODO(L2, t1);
+  if (buf_idx_ >= sort_buffer_.size()) {
+    is_end_ = true;
+  } else {
+    record_ = std::move(sort_buffer_[buf_idx_]);
+    buf_idx_++;
+  }
 }
 
 auto SortExecutor::IsEnd() const -> bool
@@ -74,7 +86,8 @@ auto SortExecutor::IsEnd() const -> bool
   if (is_merge_sort_) {
     WSDB_STUDENT_TODO(L2, f1);
   }
-  WSDB_STUDENT_TODO(L2, t1);
+  // WSDB_STUDENT_TODO(L2, t1);
+  return is_end_;
 }
 
 auto SortExecutor::Compare(const Record &lhs, const Record &rhs) const -> bool
@@ -93,7 +106,13 @@ auto SortExecutor::GetSortFileName(size_t file_group, size_t file_idx) const -> 
   return fmt::format("{}_{}_{}", merge_result_file_, file_group, file_idx);
 }
 
-void SortExecutor::SortBuffer() { WSDB_STUDENT_TODO(L2, t1); }
+void SortExecutor::SortBuffer()
+{
+  // WSDB_STUDENT_TODO(L2, t1);'
+  std::sort(sort_buffer_.begin(), sort_buffer_.end(), [this](const RecordUptr &lhs, const RecordUptr &rhs) {
+    return Compare(*lhs, *rhs);
+  });
+}
 
 void SortExecutor::DumpBufferToFile(size_t file_idx) { WSDB_STUDENT_TODO(L2, f1); }
 

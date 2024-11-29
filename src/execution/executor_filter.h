@@ -45,8 +45,8 @@ public:
   [[nodiscard]] auto GetOutSchema() const -> const RecordSchema * override;
 
 private:
-  const AbstractExecutorUptr                child_;   // 更改声明为const
-  const std::function<bool(const Record &)> filter_;  // 更改声明为const
+  const AbstractExecutorUptr                child_;   // 更改声明为 const
+  const std::function<bool(const Record &)> filter_;  // 更改声明为 const
   bool                                      is_end_;
 };
 

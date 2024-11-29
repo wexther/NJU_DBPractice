@@ -130,12 +130,13 @@ private:
   inline void Merge();
 
 private:
-  AbstractExecutorUptr    child_;
-  RecordSchemaUptr        key_schema_;
-  std::vector<RecordUptr> sort_buffer_;
-  size_t                  buf_idx_;
-  bool                    is_desc_;
-  bool                    is_sorted_;
+  const AbstractExecutorUptr child_;       // 更改声明为 const
+  const RecordSchemaUptr     key_schema_;  // 更改声明为 const
+  std::vector<RecordUptr>    sort_buffer_;
+  size_t                     buf_idx_;
+  const bool                 is_desc_;  // 更改声明为 const
+  bool                       is_sorted_;//该变量似乎没用
+  bool                       is_end_;
   // use for merge sort, if you want to use merge sort, set it to true if the record number is larger than max_rec_num_
   bool        is_merge_sort_;
   size_t      max_rec_num_;
