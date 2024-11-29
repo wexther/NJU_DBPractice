@@ -264,7 +264,7 @@ def nestedloop_join(left, right, condition):
     - 提示：你可以cd到`wsdb/test/sql/lab02`目录下通过脚本`evaluate.sh`进行测试，也可以使用终端的命令行工具逐个文件测试或使用交互模式逐个命令测试，**注意：脚本并不负责项目的编译，所以请在运行脚本之前手动编译。**
 
       ```bash
-      $ bash evaluate.sh <bin directory> <test sql directory>
+      bash evaluate.sh <bin directory> <test sql directory>
       # e.g. bash evaluate.sh /path/to/wsdb/cmake-build-debug/bin t1
       ```
 
