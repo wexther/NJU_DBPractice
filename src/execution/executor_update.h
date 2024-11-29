@@ -20,7 +20,8 @@
 //
 
 /**
- * @brief set the fields in the records extracted from the child executor to the new values and update the tables and indexes
+ * @brief set the fields in the records extracted from the child executor to the new values and update the tables and
+ * indexes
  */
 
 #ifndef WSDB_EXECUTOR_UPDATE_H
@@ -44,11 +45,11 @@ public:
   [[nodiscard]] auto IsEnd() const -> bool override;
 
 private:
-  AbstractExecutorUptr                       child_;
-  TableHandle                               *tbl_;
-  std::list<IndexHandle *>                   indexes_;
-  std::vector<std::pair<RTField, ValueSptr>> updates_;
-  bool                                       is_end_;
+  const AbstractExecutorUptr                       child_;    // 更改声明为 const
+  TableHandle *const                               tbl_;      // 更改声明为 const
+  const std::list<IndexHandle *>                   indexes_;  // 更改声明为 const
+  const std::vector<std::pair<RTField, ValueSptr>> updates_;  // 更改声明为 const
+  bool                                             is_end_;
 };
 }  // namespace wsdb
 

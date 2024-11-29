@@ -42,13 +42,15 @@ void UpdateExecutor::Init() { WSDB_FETAL("UpdateExecutor does not support Init")
 
 void UpdateExecutor::Next()
 {
+  WSDB_ASSERT(!is_end_, "UpdateExecutor 已经结束");
   // number of updated records
   int count = 0;
 
-  WSDB_STUDENT_TODO(l2, t1);
+  // WSDB_STUDENT_TODO(l2, t1);
 
   std::vector<ValueSptr> values{ValueFactory::CreateIntValue(count)};
   record_ = std::make_unique<Record>(out_schema_.get(), values, INVALID_RID);
+  
   is_end_ = true;
 }
 

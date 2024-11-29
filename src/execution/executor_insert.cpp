@@ -53,6 +53,7 @@ void InsertExecutor::Next()
 
   std::vector<ValueSptr> values{ValueFactory::CreateIntValue(count)};
   record_ = std::make_unique<Record>(out_schema_.get(), values, INVALID_RID);
+  
   is_end_ = true;
 }
 
