@@ -35,12 +35,13 @@ void InsertExecutor::Init() { WSDB_FETAL("InsertExecutor does not support Init")
 
 void InsertExecutor::Next()
 {
+  WSDB_ASSERT(!is_end_, "InsertExecutor 已经结束");
   // number of inserted records
   int count = 0;
 
   // WSDB_STUDENT_TODO(l2, t1);
   // 理论上讲按火山模型这里应该只插入一条记录？但是按照下文这里应该插入所有的记录
-  for (RecordUptr &insert_record : inserts_) {
+  for (const RecordUptr &insert_record : inserts_) {
     tbl_->InsertRecord(*insert_record);
     count++;
 

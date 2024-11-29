@@ -160,8 +160,8 @@ private:
 
 private:
   std::mutex                                latch_;
-  DiskManager *const                        disk_manager_;  // 更改声明为const
-  LogManager *const                         log_manager_;   // 更改声明为const
+  DiskManager *const                        disk_manager_;  // 更改声明为 const
+  LogManager *const                         log_manager_;   // 更改声明为 const
   std::unique_ptr<Replacer>                 replacer_;
   std::array<Frame, BUFFER_POOL_SIZE>       frames_;
   std::list<frame_id_t>                     free_list_;

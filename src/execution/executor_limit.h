@@ -44,8 +44,8 @@ public:
   [[nodiscard]] auto GetOutSchema() const -> const RecordSchema * override;
 
 private:
-  const AbstractExecutorUptr child_;  // 更改声明为const
-  // max number of records to return，更改声明为const
+  const AbstractExecutorUptr child_;  // 更改声明为 const
+  // max number of records to return，更改声明为 const
   const int limit_;
   // current number of records returned
   int count_;

@@ -20,8 +20,8 @@
 //
 
 /**
- * @brief Project the records returned by the child executor, keep the columns and their relative orders in the projection schema
- * Hint: use Record(proj_schema, child_rec) to do the projection
+ * @brief Project the records returned by the child executor, keep the columns and their relative orders in the
+ * projection schema Hint: use Record(proj_schema, child_rec) to do the projection
  */
 
 #ifndef WSDB_EXECUTOR_PROJECTION_H
@@ -42,7 +42,9 @@ public:
   [[nodiscard]] auto IsEnd() const -> bool override;
 
 private:
-  AbstractExecutorUptr child_;
+  const AbstractExecutorUptr child_;  // 更改声明为 const
+  // 新加的
+  bool is_end_;
 };
 }  // namespace wsdb
 

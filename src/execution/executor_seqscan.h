@@ -44,7 +44,7 @@ public:
   [[nodiscard]] auto GetOutSchema() const -> const RecordSchema * override;
 
 private:
-  TableHandle *const tab_;  // 更改声明为const
+  TableHandle *const tab_;  // 更改声明为 const
   RID                rid_;
   // 新加的
   bool is_end_;

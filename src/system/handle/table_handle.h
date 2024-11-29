@@ -149,14 +149,14 @@ private:
   auto WrapPageHandle(Page *page) -> PageHandleUptr;
 
 private:
-  TableHeader tab_hdr_;
-  table_id_t  table_id_;
+  TableHeader      tab_hdr_;
+  const table_id_t table_id_;  // 更改声明为 const
 
-  DiskManager       *disk_manager_;
-  BufferPoolManager *buffer_pool_manager_;
+  DiskManager *const       disk_manager_;         // 更改声明为 const
+  BufferPoolManager *const buffer_pool_manager_;  // 更改声明为 const
 
-  RecordSchemaUptr schema_;
-  StorageModel     storage_model_;
+  const RecordSchemaUptr schema_;         // 更改声明为 const
+  const StorageModel     storage_model_;  // 更改声明为 const
 
   /// field below is available when storage model is pax
   // field offsets is the offset of each field stored in page

@@ -22,7 +22,7 @@
 /**
  * @brief delete the records returned by the child executor
  * should delete the records both in the table and the indexes
- * 
+ *
  */
 
 #ifndef WSDB_EXECUTOR_DELETE_H
@@ -44,10 +44,10 @@ public:
   [[nodiscard]] auto IsEnd() const -> bool override;
 
 private:
-  AbstractExecutorUptr     child_;
-  TableHandle             *tbl_;
-  std::list<IndexHandle *> indexes_;
-  bool                     is_end_;
+  const AbstractExecutorUptr     child_;    // 更改声明为 const
+  TableHandle *const             tbl_;      // 更改声明为 const
+  const std::list<IndexHandle *> indexes_;  // 更改声明为 const
+  bool                           is_end_;
 };
 }  // namespace wsdb
 

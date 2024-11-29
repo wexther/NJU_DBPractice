@@ -29,7 +29,9 @@ LimitExecutor::LimitExecutor(AbstractExecutorUptr child, int limit)
 void LimitExecutor::Init()
 {
   // WSDB_STUDENT_TODO(l2, t1);
+  WSDB_ASSERT(child_->GetType() == Basic, "LimitExecutor 需要可执行 Init() 的子执行器");
   child_->Init();
+
   count_  = 0;
   is_end_ = child_->IsEnd() || count_ >= limit_;
 }
@@ -37,6 +39,7 @@ void LimitExecutor::Init()
 void LimitExecutor::Next()
 {
   // WSDB_STUDENT_TODO(l2, t1);
+  WSDB_ASSERT(!is_end_, "LimitExecutor 已经结束");
   child_->Next();
   record_ = child_->GetRecord();
   count_++;
